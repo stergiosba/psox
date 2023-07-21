@@ -26,7 +26,6 @@ def run(key, func, n_dim, d_dim, w, c1, c2, timesteps, scale_x=1, scale_v=1):
     
     key, key_v = jrandom.split(key, 2)
     X = jrandom.uniform(key, shape=(n_dim, d_dim))*scale_x
-    X = jnp.clip(X, 7, 50)
     V = jrandom.normal(key_v, shape=(n_dim, d_dim))*scale_v
     pb = X
     f_pb = func(pb)
@@ -52,7 +51,6 @@ def run(key, func, n_dim, d_dim, w, c1, c2, timesteps, scale_x=1, scale_v=1):
         V = calculate_velocity(key, X, V, pb, gb,w,c1,c2)
 
         X+=V
-        X = jnp.clip(X, -7, 50)
         pb = X
         
         if k%100==0:
