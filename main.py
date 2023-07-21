@@ -7,11 +7,8 @@ def calculate_best_position(f_values, best_particle_cost, x, pb):
     return pos
 
 @jit
-def calculate_velocity(key, x, v, pb, gb):
+def calculate_velocity(key, x, v, pb, gb,w,c1,c2):
     n_dim, d_dim = x.shape
-    w = 0.9
-    c1 = 0.5
-    c2 = 0.3
     r1, r2 = jrandom.uniform(key, shape=(2, n_dim, d_dim))
     inertia = w * v
     best_particle_pos_component = r1 * (pb - x)
@@ -25,7 +22,7 @@ def argminx(x):
     argmin = jnp.argmin(x)
     return (x[argmin], argmin)
 
-def run(key, func, n_dim, d_dim, timesteps, scale_x=1, scale_v=1):
+def run(key, func, n_dim, d_dim, w, c1, c2, timesteps, scale_x=1, scale_v=1):
     
     key, key_v = jrandom.split(key, 2)
     X = jrandom.uniform(key, shape=(n_dim, d_dim))*scale_x
@@ -52,7 +49,7 @@ def run(key, func, n_dim, d_dim, timesteps, scale_x=1, scale_v=1):
         
         key, _ = jrandom.split(key, 2)
 
-        V = calculate_velocity(key, X, V, pb, gb)
+        V = calculate_velocity(key, X, V, pb, gb,w,c1,c2)
 
         X+=V
         X = jnp.clip(X, -7, 50)
@@ -62,20 +59,3 @@ def run(key, func, n_dim, d_dim, timesteps, scale_x=1, scale_v=1):
             print(f"Step: {k}, Best value: {best_global}, Best position: {gb}")
 
     return gb
-
-def main():
-    @jit
-    def expx2x1(x):
-        y = -jnp.exp(-(x**2+x+1))
-        return y.flatten()
-    
-    n_dim = 300
-    d_dim = 1
-    timesteps = 500
-    key = jrandom.PRNGKey(0)
-
-    run(key, expx2x1, n_dim, d_dim, timesteps)
-        
-    
-if __name__ == "__main__":
-    main()
