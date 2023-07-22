@@ -93,11 +93,10 @@ def calculate_global_best(
     Returns:
         - `min, argmin [Tuple(chex.Array, chex.Array)]`: Minimum value and index of the array.
     """
-    
+    new_best_global_val = best_val*(best_val < best_global_val) + best_global_val*(best_val >= best_global_val)
     gb = x[best_index]*(best_val < best_global_val) + gb*(best_val >= best_global_val)
     
-    new_best_global_val = best_val*(best_val < best_global_val) + best_global_val*(best_val >= best_global_val)
-    return gb, new_best_global_val
+    return new_best_global_val, gb
 
 
 def pso(
@@ -119,28 +118,28 @@ def pso(
     init_pb = init_X
     fx = func(init_X)
     f_pb = fx
-    init_best_global, gb_index = argminx(fx)
-    init_gb = init_X[gb_index]
+    init_best_gb_val, init_best_gb_index = argminx(fx)
+    init_gb = init_X[init_best_gb_index]
     
     @jit
     def body_fun(state, tmp):
-        key, X, V, pb, gb, best_global = state
+        key, X, V, pb, gb, best_global_val = state
         
         f_values = func(X)
-        best_value, best_index = argminx(f_values)
+        run_best_value, run_best_index = argminx(f_values)
                 
         pb = calculate_best_position(f_values, f_pb, X, pb)
-        gb, best_global = calculate_global_best(X, best_value, best_global, best_index, gb)
+        best_global, gb = calculate_global_best(X, run_best_value, best_global_val, run_best_index, gb)
 
         V = calculate_velocity(key, X, V, pb, gb, w, c1, c2)
         key, _ = jrandom.split(key, 2)
         pb = X
             
         carry = [key, X+V, V, pb, gb, best_global]
-        y = [gb,best_global]
+        y = [gb,best_global_val]
         return carry, y
     
-    _, scan_out = lax.scan(body_fun, [key, init_X, init_V, init_pb, init_gb, init_best_global], (), params["timesteps"])
+    _, scan_out = lax.scan(body_fun, [key, init_X, init_V, init_pb, init_gb, init_best_gb_val], (), params["timesteps"])
     
     gb = scan_out[0]
     best_global = scan_out[1]
